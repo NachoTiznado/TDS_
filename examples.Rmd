@@ -261,4 +261,5 @@ min_rank(desc(flights.dep_delay))
 #What trigonometric functions does R provide?
 #cospi(x), sinpi(x), and tanpi(x), compute cos(pi*x), sin(pi*x), and tan(pi*x)
 
-#EXERCIES 5.6 AND 5.7 MISSING
+#EXERCISS 5.6 MISSING
+#EXERCISE 5.7 MISSING
