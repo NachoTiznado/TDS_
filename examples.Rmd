@@ -1,4 +1,7 @@
 library(tidyverse)
+
+#CHAPTER 3
+
 #The data used
 mpg
 #Scatter plot
@@ -119,3 +122,143 @@ ggplot(data = diamonds) + stat_count(mapping = aes(x = cut))
 ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))
 #Barchart with stats
 ggplot(data = diamonds) + stat_summary(mapping = aes(x = cut, y = depth),fun.ymin = min,fun.ymax = max,fun.y = median)
+
+#EXCERCISES 3.7 MISSING
+
+#There’s one more piece of magic associated with bar charts. You can colour a bar chart using either the colour aesthetic, or, more usefully, fill:
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, colour = cut))
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = cut))
+#Note what happens if you map the fill aesthetic to another variable, like clarity: the bars are automatically stacked. Each colored rectangle represents a combination of cut and clarity.
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = clarity))
+#The stacking is performed automatically by the position adjustment specified by the position argument. If you don’t want a stacked bar chart, you can use one of three other options: "identity", "dodge" or "fill".
+# position = "identity" will place each object exactly where it falls in the context of the graph. This is not very useful for bars, because it overlaps them. To see that overlapping we either need to make the bars slightly transparent by setting alpha to a small value, or completely transparent by setting fill = NA.
+ggplot(data = diamonds, mapping = aes(x = cut, fill = clarity)) + geom_bar(alpha = 1/5, position = "identity")
+ggplot(data = diamonds, mapping = aes(x = cut, colour = clarity)) + geom_bar(fill = NA, position = "identity")
+#position = "fill" works like stacking, but makes each set of stacked bars the same height. This makes it easier to compare proportions across groups.
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = clarity), position = "fill")
+#position = "dodge" places overlapping objects directly beside one another. This makes it easier to compare individual values.
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge")
+
+#The values of hwy and displ are rounded so the points appear on a grid and many points overlap each other. This problem is known as overplotting. This arrangement makes it hard to see where the mass of the data is. Are the data points spread equally throughout the graph, or is there one special combination of hwy and displ that contains 109 values?
+#You can avoid this gridding by setting the position adjustment to “jitter”. position = "jitter" adds a small amount of random noise to each point. This spreads the points out because no two points are likely to receive the same amount of random noise.
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
+
+#Aggregate smooth
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) + geom_point() + geom_smooth()
+#width and height vary the amount of jittering
+#Both represent in a different way the overlapping points. One agreggate randomness and the other count (could be use with size to represent more points concentrated)
+?geom_jitter()
+?geom_count()
+
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) + geom_boxplot()
+
+#EXCERCISES 3.8 MISSING
+#EXCERCISES 3.9 MISSING
+
+
+#CHAPTER 5
+
+#First examples
+library(nycflights13)
+library(tidyverse)
+library(rmarkdown)
+nycflights13::flights
+filter(flights, month == 1, day == 1)
+jan1 <- filter(flights, month == 1, day == 1)
+(dec25 <- filter(flights, month == 12, day == 25))
+filter(flights, month = 1)
+filter(flights, month == 11 | month == 12)
+nov_dec <- filter(flights, month %in% c(11, 12))
+filter(flights, !(arr_delay > 120 | dep_delay > 120))
+filter(flights, arr_delay <= 120, dep_delay <= 120)
+
+#Find all flights that
+#Had an arrival delay of two or more hours
+filter(flights, arr_delay > 120)
+#Flew to Houston (IAH or HOU)
+?flights
+filter(flights, dest == "IAH" | dest=="HOU")
+#Were operated by United, American, or Delta
+filter(flights, carrier == "UA" | carrier == "AA" | carrier == "DA")
+#Departed in summer (July, August, and September)
+filter(flights, month == 7 |month == 8 | month == 9)
+#Arrived more than two hours late, but didn’t leave late
+filter(flights, arr_delay > 120,  !dep_delay > 0)
+#Were delayed by at least an hour, but made up over 30 minutes in flight
+filter(flights, arr_delay > 60, air_time > 30)
+#Departed between midnight and 6am (inclusive)
+filter(flights, dep_time>0000,dep_time<=0600)
+#Another useful dplyr filtering helper is between(). What does it do? Can you use it to simplify the code needed to answer the previous challenges?
+filter(flights, between(dep_time, 0000,0600)) 
+#How many flights have a missing dep_time? What other variables are missing? What might these rows represent?
+filter(flights, is.na(dep_time))
+#Why is NA ^ 0 not missing? Why is NA | TRUE not missing? Why is FALSE & NA not missing? Can you figure out the general rule? (NA * 0 is a tricky counterexample!)
+
+
+#Arrange rows
+arrange(flights, year, month, day)
+arrange(flights, desc(dep_delay))
+#Missing values are always sorted at the end
+
+#How could you use arrange() to sort all missing values to the start? (Hint: use is.na()).
+#Sort flights to find the most delayed flights. Find the flights that left earliest.
+arrange(flights, desc(dep_delay))
+arrange(flights, desc(dep_time))
+#Sort flights to find the fastest flights.
+arrange(flights, air_time)
+#Which flights travelled the longest? Which travelled the shortest?
+arrange(flights, distance)
+arrange(flights, desc(distance))
+
+#Select columns by name
+select(flights, year, month, day)
+# Select all columns between year and day (inclusive)
+select(flights, year:day)
+# Select all columns except those from year to day (inclusive)
+select(flights, -(year:day))
+#use rename(), which is a variant of select() that keeps all the variables that aren’t explicitly mentioned:
+rename(flights, tail_num = tailnum)
+#select() in conjunction with the everything() helper. This is useful if you have a handful of variables you’d like to move to the start of the data frame.
+select(flights, time_hour, air_time, everything())
+
+#Brainstorm as many ways as possible to select dep_time, dep_delay, arr_time, and arr_delay from flights.
+#What happens if you include the name of a variable multiple times in a select() call?
+#What does the one_of() function do? Why might it be helpful in conjunction with this vector?
+vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+#Does the result of running the following code surprise you? How do the select helpers deal with case by default? How can you change that default?
+select(flights, contains("TIME"))
+
+#mutate() always adds new columns at the end of your dataset so we’ll start by creating a narrower dataset so we can see the new variables. Remember that when you’re in RStudio, the easiest way to see all the columns is View().
+flights_sml <- select(flights, year:day, ends_with("delay"), distance, air_time)
+mutate(flights_sml,gain = dep_delay - arr_delay,speed = distance / air_time * 60)
+#you can refer to columns that you’ve just created:
+mutate(flights_sml,
+       gain = dep_delay - arr_delay,
+       hours = air_time / 60,
+       gain_per_hour = gain / hours)
+#If you only want to keep the new variables, use transmute()
+transmute(flights,
+gain = dep_delay - arr_delay,
+hours = air_time / 60,
+gain_per_hour = gain / hours
+)
+#Modular arithmetic: %/% (integer division) and %% (remainder)
+
+#Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they’re not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+transmute(flights, dep_time, sched_dep_time, dt = (dep_time %/% 100)*60 + dep_time %% 100, sdt = (sched_dep_time %/% 100)*60 + sched_dep_time %% 100)
+#Compare air_time with arr_time - dep_time. What do you expect to see? What do you see? What do you need to do to fix it?
+#Not the same values. You need to consider that after 24 the next hour is 0.
+transmute(flights, air_time, dif=arr_time-dep_time)
+#Compare dep_time, sched_dep_time, and dep_delay. How would you expect those three numbers to be related?
+#dep_delay + sched_dep_time is the actual departed time
+transmute(flights,dep_time, sched_dep_time, dep_delay)
+#Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for min_rank().
+x<-transmute(flights,dep_delay)
+min_rank(desc(flights.dep_delay))
+#What does 1:3 + 1:10 return? Why?
+#Its a matrix and its sum
+1:3+1:10
+#What trigonometric functions does R provide?
+#cospi(x), sinpi(x), and tanpi(x), compute cos(pi*x), sin(pi*x), and tan(pi*x)
+
+#EXERCIES 5.6 AND 5.7 MISSING
